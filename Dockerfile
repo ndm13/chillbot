@@ -1,3 +1,3 @@
-FROM alpine:latest
+FROM ubuntu:latest
 COPY "./build/4kbot" "./"
 CMD "4kbot"
