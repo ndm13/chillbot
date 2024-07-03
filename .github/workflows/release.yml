@@ -13,7 +13,7 @@ env:
 
 jobs:
   compile-unixlike:
-    name: Compile Unix-Like
+    name: Build and deploy
     runs-on: ubuntu-latest
 
     steps:
@@ -21,7 +21,9 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Setup Deno
-        uses: denoland/setup-deno@v1.1.1
+        uses: denoland/setup-deno@v1.1.4
+        with:
+          deno-version: vx.x.x
 
       - name: Compile ${{ matrix.target }}
         run: |
