@@ -132,28 +132,28 @@ client.once(Events.ClientReady, (bot) => {
         }
     });
 
-    let slow = false;
+    const slow: Record<string,number> = {};
     bot.on("interactionCreate", async (interaction) => {
         if (!interaction.isChatInputCommand()) return;
         switch (interaction.commandName) {
             case "chill":
             {
-                if (slow) {
+                const channel = interaction.channel as TextChannel;
+                if (slow[channel.id]) {
                     console.log(interaction.user.displayName, 'tried to chill, but it failed.');
                     return interaction.reply({
                         content: "Someone already asked to chill. No need to do it twice.",
                         ephemeral: true
                     });
                 }
-                const channel = interaction.channel as TextChannel;
                 channel.setRateLimitPerUser(15, `${interaction.user.displayName} wants to chill.`);
-                slow = true;
+                slow[channel.id] = true;
                 await interaction.reply("Okay, things are a bit heated. Y'all need to chill for a bit.");
-                console.log(interaction.user.displayName, 'started a chill sesh.');
+                console.log(interaction.user.displayName, `started a chill sesh in #${channel.name}.`);
                 setTimeout(() => {
                     channel.setRateLimitPerUser(channel.defaultThreadRateLimitPerUser || 0, "Hope you all feel better :)");
-                    console.log(interaction.user.displayName, 'had their chill expire.');
-                    slow = false;
+                    console.log(interaction.user.displayName, `had their chill expire in #${channel.name}.`);
+                    slow[channel.id] = false;
                 }, 300000);
             }
                 break;
