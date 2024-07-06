@@ -132,7 +132,7 @@ client.once(Events.ClientReady, (bot) => {
         }
     });
 
-    const slow: Record<string,number> = {};
+    const slow: Record<string,boolean> = {};
     bot.on("interactionCreate", async (interaction) => {
         if (!interaction.isChatInputCommand()) return;
         switch (interaction.commandName) {
