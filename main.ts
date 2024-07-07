@@ -132,7 +132,7 @@ client.once(Events.ClientReady, (bot) => {
         }
     });
 
-    const slow: Record<string,boolean> = {};
+    const slow: Record<string, boolean> = {};
     bot.on("interactionCreate", async (interaction) => {
         if (!interaction.isChatInputCommand()) return;
         switch (interaction.commandName) {
@@ -140,7 +140,7 @@ client.once(Events.ClientReady, (bot) => {
             {
                 const channel = interaction.channel as TextChannel;
                 if (slow[channel.id]) {
-                    console.log(interaction.user.displayName, 'tried to chill, but it failed.');
+                    console.log(interaction.user.displayName, "tried to chill, but it failed.");
                     return interaction.reply({
                         content: "Someone already asked to chill. No need to do it twice.",
                         ephemeral: true
@@ -155,6 +155,105 @@ client.once(Events.ClientReady, (bot) => {
                     console.log(interaction.user.displayName, `had their chill expire in #${channel.name}.`);
                     slow[channel.id] = false;
                 }, 300000);
+            }
+                break;
+            case "when":
+            {
+                let tzData: Record<string, { tz: string; locale: string }> = {};
+                try {
+                    tzData = JSON.parse(Deno.readTextFileSync("tz.json"));
+                } catch (error) {
+                    try {
+                        Deno.writeTextFileSync("tz.json", "{}");
+                    } catch (error2) {
+                        console.error(error2, error);
+                        return;
+                    }
+                }
+                switch (interaction.options.getSubcommand()) {
+                    case "me":
+                    {
+                        const tz = interaction.options.getString("tz");
+                        const locale = interaction.options.getString("locale");
+                        if (!tz) {
+                            return interaction.reply({
+                                content: "Invalid command: time zone is required!",
+                                ephemeral: true,
+                            });
+                        }
+                        if (locale) {
+                            try {
+                                Intl.getCanonicalLocales([locale]);
+                            } catch (_x) {
+                                return interaction.reply({
+                                    content: `Invalid locale: '${locale}' is not supported. Use the format [language code]-[country code]: for instance, en-US.`,
+                                    ephemeral: true,
+                                });
+                            }
+                        }
+                        if (!Intl.supportedValuesOf("timeZone").includes(tz)) {
+                            return interaction.reply({
+                                content: `Invalid time zone: '${tz}' is not supported. Be sure to use the format specified [here.](https://www.iana.org/time-zones).`,
+                                ephemeral: true,
+                            });
+                        }
+                        tzData[interaction.user.id] = { tz, locale: locale || "en-US" };
+                        const options: Intl.DateTimeFormatOptions = {
+                            dateStyle: "full",
+                            timeStyle: "full",
+                            timeZone: tz,
+                        };
+                        interaction.reply({
+                            content: `Your current time should be ${
+                                Intl.DateTimeFormat(locale || "en-US", options).format(new Date())
+                            }. If this is wrong, update your options!`,
+                            ephemeral: true,
+                        })
+                            .then(() => console.log(`${interaction.user.displayName} updated their time zone info (${tz}, ${locale}).`))
+                            .catch((e) => console.error(e));
+                        Deno.writeTextFileSync("tz.json", JSON.stringify(tzData, null, 2));
+                    }
+                        break;
+                    case "is":
+                    {
+                        const user = interaction.options.getUser("user");
+                        if (!user) {
+                            return interaction.reply({
+                                content: "Invalid command: user is required!",
+                                ephemeral: true,
+                            });
+                        }
+                        const targetData = tzData[user.id];
+                        if (!targetData) {
+                            return interaction.reply({
+                                content: `${user.displayName} has not registered their time zone! Can't convert for you :pensive:.`,
+                                ephemeral: true,
+                            });
+                        }
+                        const options: Intl.DateTimeFormatOptions = {
+                            dateStyle: "full",
+                            timeStyle: "full",
+                            timeZone: targetData.tz,
+                        };
+                        const userLocale = tzData[interaction.user.id]?.locale;
+                        interaction.reply({
+                            content: `It is ${
+                                Intl.DateTimeFormat(userLocale || "en-US", options).format(new Date())
+                            } for ${user.displayName}.${
+                                !userLocale
+                                    ? "\n*Note: if you want this date formatted for your region, use `/when me` with the locale option*"
+                                    : ""
+                            }`,
+                            ephemeral: true,
+                        })
+                            .then(() => console.log(`${interaction.user.displayName} asked the time for ${user.displayName}.`))
+                            .catch((e) => console.error(e));
+                    }
+                        break;
+                    default:
+                        console.log("Unsupported subcommand for when:", interaction.options.getSubcommand());
+                        return;
+                }
             }
                 break;
             default:

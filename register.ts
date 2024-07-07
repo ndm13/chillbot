@@ -23,6 +23,27 @@ const rest = new REST().setToken(token);
                 new SlashCommandBuilder()
                     .setName('chill')
                     .setDescription('Slow things down for a bit to talk about our feelings.')
+                    .toJSON(),
+                new SlashCommandBuilder()
+                    .setName('when')
+                    .setDescription('Time zone calculator for users who have opted in.')
+                    .addSubcommand(subcommand => subcommand
+                        .setName('me')
+                        .setDescription('Add or change your time zone.')
+                        .addStringOption(option => option
+                            .setName('tz')
+                            .setDescription('Your time zone (e.g. America/New_York).')
+                            .setRequired(true))
+                        .addStringOption(option => option
+                            .setName('locale')
+                            .setDescription('Your locale (e.g. en-US).')))
+                    .addSubcommand(subcommand => subcommand
+                        .setName('is')
+                        .setDescription('Look up the local time for a user.')
+                        .addUserOption(option => option
+                            .setName('user')
+                            .setDescription('The user to look up.')
+                            .setRequired(true)))
                     .toJSON()
             ]
         });
