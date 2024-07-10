@@ -63,9 +63,10 @@ client.once(Events.ClientReady, (bot) => {
         // If posted by webhook, ignore
         if (message.webhookId) return;
         // Always notify ghost pings (within an hour)
-        const ghost = message.mentions.users.size > 0 && Date.now() - 3600000 > message.createdTimestamp;
+        const ghost = (message.mentions.users.size > 0) && (Date.now() - 3600000 < message.createdTimestamp);
         // If visible longer than 15s, ignore
-        if (!ghost && Date.now() - 15000 > message.createdTimestamp) return;
+        const secondRule = Date.now() - 15000 < message.createdTimestamp;
+        if (!ghost && !secondRule) return;
         // Build links
         const files = message.attachments.map((a) => message.id + "/" + a.name);
         // Get webhook for this channel, or create if not exist
@@ -103,24 +104,32 @@ client.once(Events.ClientReady, (bot) => {
         );
         // Resend message
         try {
-            await hook.send({
-                content: message.content
-                    ? message.content
-                    : message.stickers.size > 0
-                        ? (message.stickers.first()?.format === 3
-                            ? `*Sent a default sticker: **${message.stickers.first()?.name}***`
-                            : message.stickers.first()?.url)
-                        : undefined,
-                files: files.map((p) => {
-                    return {
-                        attachment: p as string,
-                        name: p.split("/")[1],
-                    };
-                }),
-                threadId: message.channel.isThread() ? message.channel.id : undefined,
-                username: member?.displayName,
-                avatarURL: member?.displayAvatarURL(),
-            });
+            if (secondRule) {
+                // If we have cached content, send it
+                await hook.send({
+                    content: message.content
+                        ? message.content
+                        : message.stickers.size > 0
+                            ? (message.stickers.first()?.format === 3
+                                ? `*Sent a default sticker: **${message.stickers.first()?.name}***`
+                                : message.stickers.first()?.url)
+                            : undefined,
+                    files: files.map((p) => {
+                        return {
+                            attachment: p as string,
+                            name: p.split("/")[1],
+                        };
+                    }),
+                    threadId: message.channel.isThread() ? message.channel.id : undefined,
+                    username: member?.displayName,
+                    avatarURL: member?.displayAvatarURL(),
+                });
+            } else {
+                // Otherwise just notify for ghost ping
+                await message.channel.send({
+                    content: `<@${message.author?.id}> tried to ghost ping ${message.mentions.users.map(u => `<@${u.id}>`).join(', ')}.`
+                });
+            }
         } catch (e) {
             console.log(message.toJSON());
             console.error(e);
