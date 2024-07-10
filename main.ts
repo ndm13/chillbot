@@ -45,14 +45,7 @@ client.once(Events.ClientReady, (bot) => {
                     Deno.mkdirSync(message.id, { recursive: true });
                     const path = message.id + "/" + a.name;
                     await Deno.writeFile(path, r.body);
-                    console.log(
-                        "Attachment",
-                        a.name,
-                        "-",
-                        (await Deno.stat(path)).size,
-                        "/",
-                        a.size,
-                    );
+                    console.log("Attachment", a.name, "-", (await Deno.stat(path)).size, "/", a.size);
                 }
             }));
         // Delete after 30s
@@ -69,8 +62,10 @@ client.once(Events.ClientReady, (bot) => {
     bot.on("messageDelete", async (message) => {
         // If posted by webhook, ignore
         if (message.webhookId) return;
-        // If visible longer than 10s, ignore
-        if (Date.now() - 10000 > message.createdTimestamp) return;
+        // Always notify ghost pings (within an hour)
+        const ghost = message.mentions.users.size > 0 && Date.now() - 3600000 > message.createdTimestamp;
+        // If visible longer than 15s, ignore
+        if (!ghost && Date.now() - 15000 > message.createdTimestamp) return;
         // Build links
         const files = message.attachments.map((a) => message.id + "/" + a.name);
         // Get webhook for this channel, or create if not exist
@@ -253,6 +248,38 @@ client.once(Events.ClientReady, (bot) => {
                     default:
                         console.log("Unsupported subcommand for when:", interaction.options.getSubcommand());
                         return;
+                }
+            }
+                break;
+            case 'temp': {
+                switch (interaction.options.getSubcommand()) {
+                    case 'c': {
+                        const c = interaction.options.getInteger('temperature');
+                        if (!c) return interaction.reply({
+                            content: 'Missing temperature!',
+                            ephemeral: true
+                        });
+                        const f = (c * 9 / 5) + 32;
+                        return interaction.reply({
+                            content: `${c}°C is ${f}°F.`,
+                            ephemeral: true
+                        });
+                    }
+                    case 'f': {
+                        const f = interaction.options.getInteger('temperature');
+                        if (!f) return interaction.reply({
+                            content: 'Missing temperature!',
+                            ephemeral: true
+                        });
+                        const c = (f - 32) * 5 / 9;
+                        return interaction.reply({
+                            content: `${f}°F is ${c}°C.`,
+                            ephemeral: true
+                        });
+                    }
+                    default: {
+                        console.log('Invalid option for temp:', interaction.options.getSubcommand());
+                    }
                 }
             }
                 break;

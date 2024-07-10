@@ -44,6 +44,22 @@ const rest = new REST().setToken(token);
                             .setName('user')
                             .setDescription('The user to look up.')
                             .setRequired(true)))
+                    .toJSON(),
+                new SlashCommandBuilder()
+                    .setName('temp')
+                    .setDescription('Convert temperature from freedom units to normal ones.')
+                    .addSubcommand(option => option
+                        .setName('c')
+                        .setDescription('Convert Celsius to Fahrenheit.')
+                        .addIntegerOption(option => option
+                            .setName('temperature')
+                            .setDescription('Temperature in Celsius.')))
+                    .addSubcommand(option => option
+                        .setName('f')
+                        .setDescription('Convert Fahrenheit to Celsius.')
+                        .addIntegerOption(option => option
+                            .setName('temperature')
+                            .setDescription('Temperature in Fahrenheit.')))
                     .toJSON()
             ]
         });
