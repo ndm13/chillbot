@@ -60,6 +60,32 @@ const rest = new REST().setToken(token);
                         .addIntegerOption(option => option
                             .setName('temperature')
                             .setDescription('Temperature in Fahrenheit.')))
+                    .toJSON(),
+                new SlashCommandBuilder()
+                    .setName('length')
+                    .setDescription('Convert length from freedom units to normal ones.')
+                    .addSubcommand(option => option
+                        .setName('metric')
+                        .setDescription('Convert meters/centimeters to inches/feet.')
+                        .addNumberOption(option => option
+                            .setName('meters')
+                            .setDescription('Length in meters.')
+                            .setRequired(false))
+                        .addIntegerOption(option => option
+                            .setName('centimeters')
+                            .setDescription('Length in centimeters.')
+                            .setRequired(false)))
+                    .addSubcommand(option => option
+                        .setName('imperial')
+                        .setDescription('Convert feet/inches to meters/centimeters.')
+                        .addNumberOption(option => option
+                            .setName('feet')
+                            .setDescription('Length in feet.')
+                            .setRequired(false))
+                        .addIntegerOption(option => option
+                            .setName('inches')
+                            .setDescription('Length in inches.')
+                            .setRequired(false)))
                     .toJSON()
             ]
         });

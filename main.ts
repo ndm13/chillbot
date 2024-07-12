@@ -12,6 +12,18 @@ import {
 console.log("Loading env...");
 await dotenv.load({ export: true });
 
+const CI4K_TIMER = Deno.env.has('CI4K_TIMER') ?
+    Number.parseInt(Deno.env.get('CI4K_TIMER') || '') || 0 : 10;
+const GHOST_PING_TIMER = Deno.env.has('GHOST_PING_TIMER') ?
+    Number.parseInt(Deno.env.get('GHOST_PING_TIMER') || '') || 0 : 3600;
+const ATTACHMENT_CACHE_WINDOW = Deno.env.has('ATTACHMENT_CACHE_WINDOW') ?
+    Number.parseInt(Deno.env.get('ATTACHMENT_CACHE_WINDOW') || '') : 30;
+const CHILL_LIMIT = Deno.env.has('CHILL_LIMIT') ?
+    Number.parseInt(Deno.env.get('CHILL_LIMIT') || '') : 15;
+
+if (ATTACHMENT_CACHE_WINDOW <= CI4K_TIMER)
+    console.warn("Attachment cache window is tighter than 4K timer window. This may fail to preserve attachments!");
+
 console.log("Starting client...");
 const client = new Client({
     intents: [
@@ -49,7 +61,7 @@ client.once(Events.ClientReady, (bot) => {
                 }
             }));
         // Delete after 30s
-        await Promise.all([pathsPromise, sleep(30)]);
+        await Promise.all([pathsPromise, sleep(ATTACHMENT_CACHE_WINDOW)]);
         try {
             if (Deno.statSync(message.id).isDirectory) {
                 Deno.removeSync(message.id, { recursive: true });
@@ -63,9 +75,9 @@ client.once(Events.ClientReady, (bot) => {
         // If posted by webhook, ignore
         if (message.webhookId) return;
         // Always notify ghost pings (within an hour)
-        const ghost = (message.mentions.users.size > 0) && (Date.now() - 3600000 < message.createdTimestamp);
-        // If visible longer than 15s, ignore
-        const secondRule = Date.now() - 15000 < message.createdTimestamp;
+        const ghost = (message.mentions.users.size > 0) && (Date.now() - (GHOST_PING_TIMER * 1000) < message.createdTimestamp);
+        // If visible longer than 10s, ignore
+        const secondRule = Date.now() - (CI4K_TIMER * 1000) < message.createdTimestamp;
         if (!ghost && !secondRule) return;
         // Build links
         const files = message.attachments.map((a) => message.id + "/" + a.name);
@@ -127,7 +139,7 @@ client.once(Events.ClientReady, (bot) => {
             } else {
                 // Otherwise just notify for ghost ping
                 await message.channel.send({
-                    content: `<@${message.author?.id}> tried to ghost ping ${message.mentions.users.map(u => `<@${u.id}>`).join(', ')}.`
+                    content: `<@${message.author?.id}>'s message pinging ${message.mentions.users.map(u => `<@${u.id}>`).join('/')} was deleted.`
                 });
             }
         } catch (e) {
@@ -150,17 +162,16 @@ client.once(Events.ClientReady, (bot) => {
                         ephemeral: true
                     });
                 }
-                channel.setRateLimitPerUser(15, `${interaction.user.displayName} wants to chill.`);
+                channel.setRateLimitPerUser(CHILL_LIMIT, `${interaction.user.displayName} wants to chill.`);
                 slow[channel.id] = true;
                 await interaction.reply("Okay, things are a bit heated. Y'all need to chill for a bit.");
                 console.log(interaction.user.displayName, `started a chill sesh in #${channel.name}.`);
-                setTimeout(() => {
+                return setTimeout(() => {
                     channel.setRateLimitPerUser(channel.defaultThreadRateLimitPerUser || 0, "Hope you all feel better :)");
                     console.log(interaction.user.displayName, `had their chill expire in #${channel.name}.`);
                     slow[channel.id] = false;
                 }, 300000);
             }
-                break;
             case "when":
             {
                 let tzData: Record<string, { tz: string; locale: string }> = {};
@@ -288,6 +299,42 @@ client.once(Events.ClientReady, (bot) => {
                     }
                     default: {
                         console.log('Invalid option for temp:', interaction.options.getSubcommand());
+                    }
+                }
+            }
+                break;
+            case 'length': {
+                switch (interaction.options.getSubcommand()) {
+                    case 'metric': {
+                        const m = interaction.options.getNumber('meters') || 0;
+                        const cm = interaction.options.getInteger('centimeters') || 0;
+                        if (!cm && !m) return interaction.reply({
+                            content: 'Missing length!',
+                            ephemeral: true
+                        });
+                        const inches = ((m * 100) + cm) / 2.54;
+                        const ft = Math.floor(inches / 12);
+                        const inRem = inches % 12;
+                        return interaction.reply({
+                            content: `${cm === 0 ? m + "m" : ((100 * m) + cm) + "cm"} is ${ft > 0 ? ft + "'" : ''}${inRem > 0 || ft === 0 ? Math.round(inRem) + '"' : ''}.`,
+                            ephemeral: true
+                        });
+                    }
+                    case 'imperial': {
+                        const ft = interaction.options.getNumber('feet') || 0;
+                        const n = interaction.options.getInteger('inches') || 0;
+                        if (!ft && !n) return interaction.reply({
+                            content: 'Missing length!',
+                            ephemeral: true
+                        });
+                        const cm = ((ft * 12) + n) * 2.54;
+                        return interaction.reply({
+                            content: `${ft > 0 ? ft + "'" : ''}${n > 0 || ft === 0 ? n + '"' : ''} is ${cm > 100 ? (cm / 100) + "m" : Math.round(cm) + "cm"}.`,
+                            ephemeral: true
+                        });
+                    }
+                    default: {
+                        console.log('Invalid option for length:', interaction.options.getSubcommand());
                     }
                 }
             }
