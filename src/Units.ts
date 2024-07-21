@@ -25,6 +25,32 @@ export default class Units {
             ephemeral: true
         });
     }
+    milesToKilometers(interaction: ChatInputCommandInteraction) {
+        const mi = interaction.options.getNumber('distance');
+        const ph = interaction.options.getBoolean('per-hour') || false;
+        if (!mi) return interaction.reply({
+            content: 'Missing distance!',
+            ephemeral: true
+        });
+        const km = Math.round(mi * 1.60934 * 100) / 100;
+        return interaction.reply({
+            content: `${mi}${ph ? 'mph' : ' miles'} is ${km}${ph ? 'km/h' : ' kilometers'}.`,
+            ephemeral: true
+        });
+    }
+    kilometersToMiles(interaction: ChatInputCommandInteraction) {
+        const km = interaction.options.getNumber('distance');
+        const ph = interaction.options.getBoolean('per-hour') || false;
+        if (!km) return interaction.reply({
+            content: 'Missing distance!',
+            ephemeral: true
+        });
+        const mi = Math.round(km / 1.60934 * 100) / 100;
+        return interaction.reply({
+            content: `${km}${ph ? 'km/h' : ' kilometers'} is ${mi}${ph ? 'mph' : ' miles'}.`,
+            ephemeral: true
+        });
+    }
     metricLengthToImperial(interaction: ChatInputCommandInteraction) {
         const m = interaction.options.getNumber('meters') || 0;
         const cm = interaction.options.getInteger('centimeters') || 0;

@@ -53,13 +53,41 @@ const rest = new REST().setToken(token);
                         .setDescription('Convert Celsius to Fahrenheit.')
                         .addIntegerOption(option => option
                             .setName('temperature')
-                            .setDescription('Temperature in Celsius.')))
+                            .setDescription('Temperature in Celsius.')
+                            .setRequired(true)))
                     .addSubcommand(option => option
                         .setName('f')
                         .setDescription('Convert Fahrenheit to Celsius.')
                         .addIntegerOption(option => option
                             .setName('temperature')
-                            .setDescription('Temperature in Fahrenheit.')))
+                            .setDescription('Temperature in Fahrenheit.')
+                            .setRequired(true)))
+                    .toJSON(),
+                new SlashCommandBuilder()
+                    .setName('distance')
+                    .setDescription('Convert distance from freedom units to normal ones.')
+                    .addSubcommand(option => option
+                        .setName('mi')
+                        .setDescription('Convert miles to kilometers.')
+                        .addNumberOption(option => option
+                            .setName('distance')
+                            .setDescription('Distance in miles.')
+                            .setRequired(true))
+                        .addBooleanOption(option => option
+                            .setName('per-hour')
+                            .setDescription('Include "per hour" suffix?')
+                            .setRequired(false)))
+                    .addSubcommand(option => option
+                        .setName('km')
+                        .setDescription('Convert kilometers to miles.')
+                        .addNumberOption(option => option
+                            .setName('distance')
+                            .setDescription('Distance in kilometers.')
+                            .setRequired(true))
+                        .addBooleanOption(option => option
+                            .setName('per-hour')
+                            .setDescription('Include "per hour" suffix?')
+                            .setRequired(false)))
                     .toJSON(),
                 new SlashCommandBuilder()
                     .setName('length')

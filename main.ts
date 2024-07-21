@@ -82,6 +82,14 @@ client.once(Events.ClientReady, (bot) => {
                         console.log('Invalid option for temp:', interaction.options.getSubcommand());
                         return;
                 }
+            case 'distance':
+                switch (interaction.options.getSubcommand()) {
+                    case 'mi': return units.milesToKilometers(interaction);
+                    case 'km': return units.kilometersToMiles(interaction);
+                    default:
+                        console.log('Invalid option for distance:', interaction.options.getSubcommand());
+                        return;
+                }
             case 'length':
                 switch (interaction.options.getSubcommand()) {
                     case 'metric': return units.metricLengthToImperial(interaction);
