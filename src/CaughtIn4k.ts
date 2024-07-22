@@ -6,12 +6,14 @@ export default class CaughtIn4k {
     catchTimer;
     attachmentCacheWindow;
     ghostPingTimer;
+    exempt;
 
-    constructor(botId: string, catchTimer: number, attachmentCacheWindow : number, ghostPingTimer: number) {
+    constructor(botId: string, catchTimer: number, attachmentCacheWindow : number, ghostPingTimer: number, exempt: string[]) {
         this.botId = botId;
         this.catchTimer = catchTimer;
         this.attachmentCacheWindow = attachmentCacheWindow;
         this.ghostPingTimer = ghostPingTimer;
+        this.exempt = [botId, ...exempt];
     }
 
     async onMessageCreate(message: Message) {
@@ -42,6 +44,9 @@ export default class CaughtIn4k {
         // If posted by webhook, ignore
         if (message.webhookId) return;
 
+        // If message author is exempt, ignore
+        if (message.author && this.exempt.includes(message.author.id)) return;
+
         // If outside of timers, ignore
         const ghost = (message.mentions.users.size > 0) &&
             (Date.now() - (this.ghostPingTimer * 1000) < message.createdTimestamp);
@@ -58,14 +63,13 @@ export default class CaughtIn4k {
         const hook: Webhook = await this.getWebhookForChannel(hookChannel, message.channel);
 
         // Get member info so we have nice names and PFPs
-        const member = await message.guild?.members.fetch("" + message.author?.id) as GuildMember;
-        this.logSneaky(member, message, hookChannel);
+        this.logSneaky(message.member as GuildMember, message, hookChannel);
 
         // Resend message
         try {
             // If we have cached content, send it
             if (secondRule)
-                return this.resendCachedMessage(hook, message, files, member);
+                return this.resendCachedMessage(hook, message, files, message.member as GuildMember);
             // Otherwise just notify for ghost ping
             return this.notifyGhostPing(message);
         } catch (e) {

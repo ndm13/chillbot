@@ -17,6 +17,7 @@ await dotenv.load({ export: true });
 
 const CI4K_TIMER = Deno.env.has('CI4K_TIMER') ?
     Number.parseInt(Deno.env.get('CI4K_TIMER') || '') || 0 : 10;
+const CI4K_EXEMPT = Deno.env.get('CI4K_EXEMPT')?.split(',') || []
 const GHOST_PING_TIMER = Deno.env.has('GHOST_PING_TIMER') ?
     Number.parseInt(Deno.env.get('GHOST_PING_TIMER') || '') || 0 : 3600;
 const ATTACHMENT_CACHE_WINDOW = Deno.env.has('ATTACHMENT_CACHE_WINDOW') ?
@@ -54,7 +55,7 @@ const client = new Client({
 client.once(Events.ClientReady, (bot) => {
     console.log("Authenticated as", bot.user.tag);
 
-    const ci4k = new CaughtIn4k(bot.user.id, CI4K_TIMER, ATTACHMENT_CACHE_WINDOW, GHOST_PING_TIMER);
+    const ci4k = new CaughtIn4k(bot.user.id, CI4K_TIMER, ATTACHMENT_CACHE_WINDOW, GHOST_PING_TIMER, CI4K_EXEMPT);
     bot.on("messageCreate", async message => await ci4k.onMessageCreate(message));
     bot.on("messageDelete", async message => await ci4k.onMessageDelete(message));
     console.log("Registered 4kbot");
