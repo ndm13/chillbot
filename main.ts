@@ -10,6 +10,7 @@ import CaughtIn4k from "./src/CaughtIn4k.ts";
 import ChillMode from "./src/ChillMode.ts";
 import Timezones from "./src/Timezones.ts";
 import Units from "./src/Units.ts";
+import SafeWord from "./src/SafeWord.ts";
 
 console.log("Loading env...");
 await dotenv.load({ export: true });
@@ -24,7 +25,7 @@ const ATTACHMENT_CACHE_WINDOW = Deno.env.has('ATTACHMENT_CACHE_WINDOW') ?
 const CHILL_LIMIT = Deno.env.has('CHILL_LIMIT') ?
     Number.parseInt(Deno.env.get('CHILL_LIMIT') || '') : 15;
 const CHILL_DURATION = Deno.env.has('CHILL_DURATION') ?
-    Number.parseInt(Deno.env.get('CHILL_DURATION') || '') : 300;
+    Number.parseInt(Deno.env.get('CHILL_DURATION') || '') : 600;
 
 const TZ_JSON_PATH = Deno.env.get('TZ_JSON_PATH') || 'tz.json';
 
@@ -59,6 +60,7 @@ client.once(Events.ClientReady, (bot) => {
     console.log("Registered 4kbot");
 
     const chillMode = new ChillMode(CHILL_LIMIT, CHILL_DURATION);
+    const safeWord = new SafeWord();
     const timezones = new Timezones(TZ_JSON_PATH);
     const units = new Units();
 
@@ -66,6 +68,7 @@ client.once(Events.ClientReady, (bot) => {
         if (!interaction.isChatInputCommand()) return;
         switch (interaction.commandName) {
             case "chill": return chillMode.chill(interaction);
+            case "safeword": return safeWord.thread(interaction);
             case "when":
                 switch (interaction.options.getSubcommand()) {
                     case "me": return timezones.update(interaction);

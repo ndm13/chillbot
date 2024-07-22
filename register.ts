@@ -25,6 +25,14 @@ const rest = new REST().setToken(token);
                     .setDescription('Slow things down for a bit to talk about our feelings.')
                     .toJSON(),
                 new SlashCommandBuilder()
+                    .setName('safeword')
+                    .setDescription('Move conversation that makes you uncomfortable to a new thread.')
+                    .addStringOption(option => option
+                        .setName('reason')
+                        .setDescription("What's making you uncomfortable?")
+                        .setRequired(false))
+                    .toJSON(),
+                new SlashCommandBuilder()
                     .setName('when')
                     .setDescription('Time zone calculator for users who have opted in.')
                     .addSubcommand(subcommand => subcommand
