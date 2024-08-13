@@ -115,7 +115,7 @@ export default class CaughtIn4k {
             files: files.map((p) => {
                 return {
                     attachment: p as string,
-                    name: p.split("/")[1],
+                    name: p.split("/")[-1],
                 };
             }),
             threadId: message.channel.isThread() ? message.channel.id : undefined,
