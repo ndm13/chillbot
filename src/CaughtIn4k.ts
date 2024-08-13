@@ -23,6 +23,7 @@ export default class CaughtIn4k {
         } catch (e) {
             try {
                 Deno.mkdirSync(attachmentCacheDir);
+                stat = Deno.statSync(attachmentCacheDir);
             } catch (e2) {
                 e2.cause = e;
                 throw e2;
