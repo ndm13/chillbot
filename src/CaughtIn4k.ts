@@ -5,15 +5,31 @@ export default class CaughtIn4k {
     botId;
     catchTimer;
     attachmentCacheWindow;
+    attachmentCacheDir;
     ghostPingTimer;
     exempt;
 
-    constructor(botId: string, catchTimer: number, attachmentCacheWindow : number, ghostPingTimer: number, exempt: string[]) {
+    constructor(botId: string, catchTimer: number, attachmentCacheWindow: number, attachmentCacheDir: string, ghostPingTimer: number, exempt: string[]) {
         this.botId = botId;
         this.catchTimer = catchTimer;
         this.attachmentCacheWindow = attachmentCacheWindow;
+        this.attachmentCacheDir = attachmentCacheDir;
         this.ghostPingTimer = ghostPingTimer;
         this.exempt = [botId, ...exempt];
+
+        let stat;
+        try {
+            stat = Deno.statSync(attachmentCacheDir);
+        } catch (e) {
+            try {
+                Deno.mkdirSync(attachmentCacheDir);
+            } catch (e2) {
+                e2.cause = e;
+                throw e2;
+            }
+        }
+        if (!stat.isDirectory)
+            throw new Error(`Invalid attachment cache directory: ${attachmentCacheDir}`);
     }
 
     async onMessageCreate(message: Message) {
@@ -24,8 +40,8 @@ export default class CaughtIn4k {
             .map(async (a) => {
                 const r = await fetch(a.url);
                 if (r.body) {
-                    Deno.mkdirSync(message.id, { recursive: true });
-                    const path = message.id + "/" + a.name;
+                    Deno.mkdirSync(`${this.attachmentCacheDir}/${message.id}`, { recursive: true });
+                    const path = `${this.attachmentCacheDir}/${message.id}/${a.name}`;
                     await Deno.writeFile(path, r.body);
                     console.log("Attachment", a.name, "-", (await Deno.stat(path)).size, "/", a.size);
                 }
@@ -54,7 +70,8 @@ export default class CaughtIn4k {
         if (!ghost && !secondRule) return;
 
         // Build links
-        const files = message.attachments.map((a) => message.id + "/" + a.name);
+        const files = message.attachments
+            .map((a) => `${this.attachmentCacheDir}/${message.id}/${a.name}`);
 
         // Get webhook for this channel, or create if not exist
         const hookChannel = (message.channel.isThread()

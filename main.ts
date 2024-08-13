@@ -22,6 +22,7 @@ const GHOST_PING_TIMER = Deno.env.has('GHOST_PING_TIMER') ?
     Number.parseInt(Deno.env.get('GHOST_PING_TIMER') || '') || 0 : 3600;
 const ATTACHMENT_CACHE_WINDOW = Deno.env.has('ATTACHMENT_CACHE_WINDOW') ?
     Number.parseInt(Deno.env.get('ATTACHMENT_CACHE_WINDOW') || '') : 30;
+const ATTACHMENT_CACHE_DIR = Deno.env.get('ATTACHMENT_CACHE_DIR') || "./";
 
 const CHILL_LIMIT = Deno.env.has('CHILL_LIMIT') ?
     Number.parseInt(Deno.env.get('CHILL_LIMIT') || '') : 15;
@@ -55,14 +56,29 @@ const client = new Client({
 client.once(Events.ClientReady, (bot) => {
     console.log("Authenticated as", bot.user.tag);
 
-    const ci4k = new CaughtIn4k(bot.user.id, CI4K_TIMER, ATTACHMENT_CACHE_WINDOW, GHOST_PING_TIMER, CI4K_EXEMPT);
+    console.log("Configuring CaughtIn4k...")
+    console.log("\tCI4K_TIMER\t", CI4K_TIMER);
+    console.log("\tCI4K_EXEMPT\t", CI4K_EXEMPT);
+    console.log("\tGHOST_PING_TIMER\t", GHOST_PING_TIMER);
+    console.log("\tATTACHMENT_CACHE_WINDOW\t", ATTACHMENT_CACHE_WINDOW);
+    console.log("\tATTACHMENT_CACHE_DIR\t", ATTACHMENT_CACHE_DIR);
+
+    const ci4k = new CaughtIn4k(bot.user.id, CI4K_TIMER, ATTACHMENT_CACHE_WINDOW, ATTACHMENT_CACHE_DIR, GHOST_PING_TIMER, CI4K_EXEMPT);
     bot.on("messageCreate", async message => await ci4k.onMessageCreate(message));
     bot.on("messageDelete", async message => await ci4k.onMessageDelete(message));
-    console.log("Registered 4kbot");
+    console.log("Registered CaughtIn4k");
 
+    console.log("Configuring ChillMode...");
+    console.log("\tCHILL_LIMIT\t", CHILL_LIMIT);
+    console.log("\tCHILL_DURATION\t", CHILL_DURATION);
     const chillMode = new ChillMode(CHILL_LIMIT, CHILL_DURATION);
-    const safeWord = new SafeWord();
+
+
+    console.log("Configuring Timezones...");
+    console.log("\tTZ_JSON_PATH\t", TZ_JSON_PATH);
     const timezones = new Timezones(TZ_JSON_PATH);
+
+    const safeWord = new SafeWord();
     const units = new Units();
 
     bot.on("interactionCreate", async (interaction) => {
@@ -107,6 +123,7 @@ client.once(Events.ClientReady, (bot) => {
                 return;
         }
     });
+    console.log("Registered slash commands");
 });
 
 await client.login();
